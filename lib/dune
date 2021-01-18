@@ -1,0 +1,6 @@
+(library
+ (public_name ordre)
+ (name ordre)
+ (libraries base stdio)
+ (preprocess
+  (pps ppx_let ppx_yojson_conv)))

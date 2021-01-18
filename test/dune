@@ -1,0 +1,4 @@
+(tests
+ (names ordre)
+ (package ordre)
+ (libraries alcotest))

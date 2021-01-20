@@ -1,4 +1,4 @@
 (tests
- (names ordre)
+ (names layout_func_test)
  (package ordre)
- (libraries alcotest))
+ (libraries alcotest ordre base))

@@ -11,7 +11,7 @@ module KnotMap = Map.M (Int)
 
 type elem_t = {
   (* layout expression *)
-  l : unit;
+  l : Expr.t;
   (* span *)
   s : int;
   (* intercept *)
@@ -21,7 +21,7 @@ type elem_t = {
 }
 [@@deriving eq, show]
 
-type 'a t = elem_t KnotMap.t
+type t = elem_t KnotMap.t
 
 let empty () = Map.empty (module Int)
 

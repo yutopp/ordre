@@ -42,6 +42,7 @@ let stacked g1 g2 : Layout_func.t =
           b = b1 + b2;
         })
 
+(* TODO: fix implementation. Reduce evaluation cost *)
 let juxtaposition ~m g1 g2 : Layout_func.t =
   let k1 = Layout_func.knots g1 in
   let k2 = Layout_func.knots g2 in

@@ -38,9 +38,11 @@ let at g x =
   let (_, v) = at_minus_kv g x in
   v
 
-let calc_v { l; s; a; b } = a + b
+let calc_v ~a ~b ~dist = a + (b * dist)
 
-let v g x = calc_v (at g x)
+let v g x =
+  let (x_m, { a; b; _ }) = at_minus_kv g x in
+  calc_v ~a ~b ~dist:(x - x_m)
 
 let l g x =
   let { l; _ } = at g x in

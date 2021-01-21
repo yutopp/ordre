@@ -34,6 +34,12 @@ let to_alist g = Map.to_alist g
 let at_minus_kv g x : int * elem_t =
   Option.value_exn (Map.closest_key g `Less_or_equal_to x)
 
+let at_plus g x : int =
+  Option.value_map
+    (Map.closest_key g `Greater_than x)
+    ~f:(fun (k, _v) -> k)
+    ~default:Int.max_value
+
 let at g x =
   let (_, v) = at_minus_kv g x in
   v

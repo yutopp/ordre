@@ -119,17 +119,89 @@ let test_choise_0 () =
     [ (0, { l = Expr.Txt "a"; s = 1; a = 0; b = 1 }) ]
     (Layout_func.to_alist g)
 
+let test_e_0 () =
+  let l0 = Expr.Choice (Expr.Txt "a", Expr.Txt "b") in
+  let l1 = Expr.Choice (Expr.Txt "c", Expr.Txt "d") in
+  let l = Expr.Juxtaposition (l0, l1) in
+
+  let l' = Cost.e l in
+  Alcotest.(check Helper.expr)
+    "e"
+    (Expr.Choice
+       ( Expr.Juxtaposition
+           ( Expr.Txt "a",
+             Expr.Choice
+               ( Expr.Juxtaposition (Expr.Txt "c", Expr.Unit),
+                 Expr.Juxtaposition (Expr.Txt "d", Expr.Unit) ) ),
+         Expr.Juxtaposition
+           ( Expr.Txt "b",
+             Expr.Choice
+               ( Expr.Juxtaposition (Expr.Txt "c", Expr.Unit),
+                 Expr.Juxtaposition (Expr.Txt "d", Expr.Unit) ) ) ))
+    l'
+
 let test_article_0 () =
   let l0 = Expr.Choice (Expr.Txt "a", Expr.Txt "bb") in
   let l1 = Expr.Choice (Expr.Txt "c", Expr.Txt "dd") in
   let l2 = Expr.Choice (Expr.Txt "e", Expr.Txt "ff") in
   let l = Expr.Juxtaposition (l0, Expr.Juxtaposition (l1, l2)) in
 
+  let l' = Cost.e l in
+  Alcotest.(check Helper.expr)
+    "e"
+    (Expr.Choice
+       ( Expr.Juxtaposition
+           ( Expr.Txt "a",
+             Expr.Choice
+               ( Expr.Juxtaposition
+                   ( Expr.Txt "c",
+                     Expr.Choice
+                       ( Expr.Juxtaposition (Expr.Txt "e", Expr.Unit),
+                         Expr.Juxtaposition (Expr.Txt "ff", Expr.Unit) ) ),
+                 Expr.Juxtaposition
+                   ( Expr.Txt "dd",
+                     Expr.Choice
+                       ( Expr.Juxtaposition (Expr.Txt "e", Expr.Unit),
+                         Expr.Juxtaposition (Expr.Txt "ff", Expr.Unit) ) ) ) ),
+         Expr.Juxtaposition
+           ( Expr.Txt "bb",
+             Expr.Choice
+               ( Expr.Juxtaposition
+                   ( Expr.Txt "c",
+                     Expr.Choice
+                       ( Expr.Juxtaposition (Expr.Txt "e", Expr.Unit),
+                         Expr.Juxtaposition (Expr.Txt "ff", Expr.Unit) ) ),
+                 Expr.Juxtaposition
+                   ( Expr.Txt "dd",
+                     Expr.Choice
+                       ( Expr.Juxtaposition (Expr.Txt "e", Expr.Unit),
+                         Expr.Juxtaposition (Expr.Txt "ff", Expr.Unit) ) ) ) )
+       ))
+    l';
+
   let g = Cost.from_expr ~m:10 l in
   Alcotest.(check Helper.alist)
     "m = 10"
     [
       ( 0,
+        {
+          l =
+            Expr.Juxtaposition
+              (Expr.Txt "a", Expr.Juxtaposition (Expr.Txt "c", Expr.Txt "e"));
+          s = 3;
+          a = 0;
+          b = 0;
+        } );
+      ( 4,
+        {
+          l =
+            Expr.Juxtaposition
+              (Expr.Txt "a", Expr.Juxtaposition (Expr.Txt "c", Expr.Txt "e"));
+          s = 3;
+          a = 0;
+          b = 0;
+        } );
+      ( 5,
         {
           l =
             Expr.Juxtaposition
@@ -238,6 +310,7 @@ let () =
       );
       ("juxtpos", [ test_case "0" `Quick test_juxtpos0 ]);
       ("choise", [ test_case "0" `Quick test_choise_0 ]);
+      ("e", [ test_case "article" `Quick test_e_0 ]);
       ( "integ",
         [
           test_case "article" `Quick test_article_0;

@@ -10,6 +10,8 @@ open! Base
 
 let u = Ordre.Expr.Unit
 
+let expr = Alcotest.testable (fun fmt v -> Ordre.Expr.pp fmt v) Ordre.Expr.equal
+
 let elem_t =
   Alcotest.testable
     (fun fmt v -> Ordre.Layout_func.pp_elem_t fmt v)

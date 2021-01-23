@@ -44,39 +44,45 @@ let stacked g1 g2 : Layout_func.t =
 
 (* TODO: fix implementation. Reduce evaluation cost *)
 let juxtaposition ~m g1 g2 : Layout_func.t =
-  let k1 = Layout_func.knots g1 in
-  let k2 = Layout_func.knots g2 in
+  match Layout_func.is_empty g2 with
+  | true -> g1
+  | false ->
+      let k1 = Layout_func.knots g1 in
+      let k2 = Layout_func.knots g2 in
 
-  (* K = K1 ∪ {k − t | k ∈ K2 and s1(k − t) = t} *)
-  let kt =
-    Set.to_list k2
-    |> List.map ~f:(fun k ->
-           let ts = List.range ~start:`inclusive ~stop:`inclusive 0 k in
-           List.filter_map ts ~f:(fun t ->
-               try if Layout_func.s g1 (k - t) = t then Some (k - t) else None
-               with Not_found_s _ -> None))
-    |> List.join
-  in
-  let k = Set.union k1 (Set.of_list (module Int) kt) in
+      (* K = K1 ∪ {k − t | k ∈ K2 and s1(k − t) = t} *)
+      let kt =
+        Set.to_list k2
+        |> List.map ~f:(fun k ->
+               let ts = List.range ~start:`inclusive ~stop:`inclusive 0 k in
+               List.filter_map ts ~f:(fun t ->
+                   try
+                     if Layout_func.s g1 (k - t) = t then Some (k - t) else None
+                   with Not_found_s _ -> None))
+        |> List.join
+      in
+      let k = Set.union k1 (Set.of_list (module Int) kt) in
 
-  let g = Layout_func.empty () in
-  let g =
-    Set.fold k ~init:g ~f:(fun g k ->
-        let s1 = Layout_func.s g1 k in
-        let k' = k + s1 in
+      let g = Layout_func.empty () in
+      let g =
+        Set.fold k ~init:g ~f:(fun g k ->
+            let s1 = Layout_func.s g1 k in
+            let k' = k + s1 in
 
-        let l = Expr.Juxtaposition (Layout_func.l g1 k, Layout_func.l g2 k') in
-        let s = Layout_func.s g1 k + Layout_func.s g2 k' in
-        let a =
-          Layout_func.v g1 k + Layout_func.v g2 k' - (beta * max (k' - m) 0)
-        in
-        let b =
-          Layout_func.b g1 k + Layout_func.b g2 k'
-          - (beta * if k' >= m then 1 else 0)
-        in
-        Layout_func.add g k ~l ~s ~a ~b)
-  in
-  g
+            let l =
+              Expr.Juxtaposition (Layout_func.l g1 k, Layout_func.l g2 k')
+            in
+            let s = Layout_func.s g1 k + Layout_func.s g2 k' in
+            let a =
+              Layout_func.v g1 k + Layout_func.v g2 k' - (beta * max (k' - m) 0)
+            in
+            let b =
+              Layout_func.b g1 k + Layout_func.b g2 k'
+              - (beta * if k' >= m then 1 else 0)
+            in
+            Layout_func.add g k ~l ~s ~a ~b)
+      in
+      g
 
 let choice g1 g2 =
   let k1 = Layout_func.knots g1 in
@@ -119,11 +125,22 @@ let choice g1 g2 =
   in
   g
 
-let rec from_expr ~m expr : Layout_func.t =
+let rec c ~m expr : Layout_func.t =
   match expr with
-  | Expr.Unit -> failwith ""
-  | Expr.Juxtaposition (l1, l2) ->
-      juxtaposition ~m (from_expr ~m l1) (from_expr ~m l2)
-  | Expr.Stacked (l1, l2) -> stacked (from_expr ~m l1) (from_expr ~m l2)
+  | Expr.Unit -> Layout_func.empty ()
+  | Expr.Juxtaposition (l1, l2) -> juxtaposition ~m (c ~m l1) (c ~m l2)
+  | Expr.Stacked (l1, l2) -> stacked (c ~m l1) (c ~m l2)
   | Expr.Txt txt -> base ~m txt
-  | Expr.Choice (l1, l2) -> choice (from_expr ~m l1) (from_expr ~m l2)
+  | Expr.Choice (l1, l2) -> choice (c ~m l1) (c ~m l2)
+
+let rec e' l r : Expr.t =
+  match (l, r) with
+  | (Expr.Unit, _) -> failwith ""
+  | (Expr.Juxtaposition (l1, l2), r) -> e' l1 (e' l2 r)
+  | (Expr.Stacked (l1, l2), r) -> Expr.Stacked (e' l1 r, e' l2 r)
+  | (Expr.Choice (l1, l2), r) -> Expr.Choice (e' l1 r, e' l2 r)
+  | ((Expr.Txt _ as l), r) -> Expr.Juxtaposition (l, r)
+
+let e l = e' l Expr.Unit
+
+let from_expr ~m expr = c ~m (e expr)

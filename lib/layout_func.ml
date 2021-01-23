@@ -40,6 +40,8 @@ type t = elem_t KnotMap.t
 
 let empty () = Map.empty (module Int)
 
+let is_empty g = Map.is_empty g
+
 let add g x ~l ~s ~a ~b = Map.add_exn g ~key:x ~data:{ l; s; a; b }
 
 let knots g =
